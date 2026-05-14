@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHADOW://CORE — TERMINAL</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        body {
+            background: #000;
+            color: #00ff9d;
+            font-family: 'VT323', monospace;
+            margin: 0;
+            padding: 20px;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .terminal {
+            max-width: 820px;
+            margin: 0 auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            color: #ff0033;
+            padding: 10px 0;
+            border-bottom: 1px solid #003322;
+            margin-bottom: 20px;
+        }
+
+        #output {
+            flex: 1;
+            overflow: hidden;
+            line-height: 1.6;
+            font-size: 22px;
+        }
+
+        .line {
+            margin-bottom: 8px;
+        }
+
+        .progress-container {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .progress-bar {
+            height: 18px;
+            background: #001a0f;
+            border: 2px solid #00ff9d;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00ff9d, #00cc77);
+            transition: width 2.5s linear;
+        }
+
+        .final-message {
+            text-align: center;
+            font-size: 38px;
+            color: #ff0033;
+            margin-top: 40px;
+            text-shadow: 0 0 20px #ff0033;
+            opacity: 0;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 12px;
+            height: 22px;
+            background: #00ff9d;
+            vertical-align: middle;
+            animation: blink 0.7s infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="header">ROOT@SHADOW-CORE:~$ ./neural_scan</div>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+        const lines = [
+            "Analyse de l'environnement...",
+            "Scan du réseau local...",
+            "Adresse IP détectée : 172.16.42.███",
+            "Extraction des données temporaires...",
+            "Téléchargement du pack terminé."
+        ];
+
+        let i = 0;
+
+        function typeLine(text, callback) {
+            const lineEl = document.createElement('div');
+            lineEl.className = 'line';
+            output.appendChild(lineEl);
+
+            let j = 0;
+            const interval = setInterval(() => {
+                if (j < text.length) {
+                    lineEl.textContent += text[j];
+                    j++;
+                } else {
+                    clearInterval(interval);
+                    if (callback) callback();
+                }
+            }, 35);
+        }
+
+        function startSequence() {
+            if (i < lines.length) {
+                typeLine(lines[i], () => {
+                    i++;
+                    setTimeout(startSequence, 600);
+                });
+            } else {
+                // Barre de progression
+                setTimeout(() => {
+                    const progressHTML = `
+                        <div class="progress-container">
+                            <div>SYNCHRONISATION DU MODULE...</div>
+                            <div class="progress-bar"><div class="progress" id="prog"></div></div>
+                            <div>██████████ 100%</div>
+                        </div>
+                    `;
+                    output.innerHTML += progressHTML;
+                    document.getElementById('prog').style.width = '100%';
+
+                    // Message final
+                    setTimeout(() => {
+                        const final = document.createElement('div');
+                        final.className = 'final-message';
+                        final.innerHTML = `MODULE SYNCHRONISÉ.<br><br>À BIENTÔT POUR LA PARTIE 2.`;
+                        output.appendChild(final);
+                        final.style.transition = "opacity 3s";
+                        final.style.opacity = "1";
+
+                        // Fade out final
+                        setTimeout(() => {
+                            document.body.style.transition = "opacity 4s";
+                            document.body.style.opacity = "0";
+                        }, 4500);
+                    }, 2800);
+                }, 800);
+            }
+        }
+
+        // Lancement
+        window.onload = () => {
+            setTimeout(startSequence, 600);
+        };
+    </script>
+</body>
+</html>

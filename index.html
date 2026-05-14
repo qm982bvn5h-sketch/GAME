@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHADOW://CORE v2.7</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        :root {
+            --green: #00ff9d;
+            --red: #ff0033;
+            --darkred: #8b0000;
+            --bg: #0a0a0a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--green);
+            font-family: 'VT323', monospace;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+            cursor: crosshair;
+        }
+
+        #matrix-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 1;
+            opacity: 0.12;
+            pointer-events: none;
+        }
+
+        .container {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 38px;
+            background: rgba(10,10,10,0.95);
+            border-bottom: 1px solid var(--green);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            font-size: 18px;
+            z-index: 100;
+            box-shadow: 0 0 15px rgba(0,255,157,0.3);
+        }
+
+        .header::before {
+            content: "● ● ●";
+            color: var(--red);
+            margin-right: 15px;
+            letter-spacing: 4px;
+        }
+
+        .header-title {
+            flex: 1;
+            text-align: center;
+            letter-spacing: 3px;
+            color: var(--green);
+            text-shadow: 0 0 10px var(--green);
+        }
+
+        /* ===== MESSAGE CACHÉ ===== */
+        .hidden-msg {
+            position: absolute;
+            bottom: 8px;
+            right: 14px;
+            font-size: 11px;
+            color: #0a0a0a; /* invisible sur fond noir */
+            z-index: 200;
+            letter-spacing: 1px;
+            user-select: none;
+            transition: color 0.5s;
+        }
+        /* révèle si on survole cette zone précise */
+        .hidden-msg:hover {
+            color: #1a1a1a;
+        }
+
+        /* Message caché dans le code source HTML (commentaire) */
+
+        .mini-terminal {
+            position: absolute;
+            bottom: 30px; left: 30px;
+            width: 380px; height: 180px;
+            background: rgba(10,20,15,0.92);
+            border: 2px solid #003322;
+            border-radius: 4px;
+            padding: 12px;
+            font-size: 15px;
+            box-shadow: 0 0 20px rgba(0,255,157,0.2);
+            overflow: hidden;
+            z-index: 50;
+        }
+
+        .mini-terminal-header {
+            color: var(--red);
+            font-size: 14px;
+            margin-bottom: 8px;
+            border-bottom: 1px dotted #003322;
+            padding-bottom: 4px;
+        }
+
+        #terminal-output { height: 110px; overflow: hidden; line-height: 1.3; }
+
+        .cursor {
+            display: inline-block;
+            width: 8px; height: 16px;
+            background: var(--green);
+            vertical-align: middle;
+            animation: blink 0.8s step-end infinite;
+        }
+
+        .central { text-align: center; z-index: 20; margin-bottom: 40px; }
+
+        #cyber-cat {
+            width: 220px; height: 220px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 35px #ff0033) brightness(1.15) contrast(1.2);
+            animation: cat-glow 4s ease-in-out infinite;
+            border: 3px solid rgba(255,0,51,0.3);
+            border-radius: 12px;
+            background: rgba(0,0,0,0.6);
+        }
+
+        @keyframes cat-glow {
+            0%,100% { filter: drop-shadow(0 0 35px #ff0033) brightness(1.15); }
+            50%      { filter: drop-shadow(0 0 55px #ff3366) brightness(1.35); }
+        }
+
+        .main-text {
+            margin-top: 25px;
+            font-size: 38px;
+            letter-spacing: 6px;
+            color: var(--red);
+            text-shadow: 0 0 10px var(--red), 0 0 20px var(--red), 0 0 40px #8b0000;
+            animation: text-blink 3s infinite;
+        }
+
+        /* Sous-titre "message caché" — texte affiché, couleur quasi invisible */
+        .secret-hint {
+            margin-top: 10px;
+            font-size: 16px;
+            color: #1c1c1c;
+            letter-spacing: 2px;
+            text-shadow: none;
+            animation: none;
+        }
+
+        @keyframes text-blink {
+            0%,100% { opacity: 1; }
+            50%      { opacity: 0.4; }
+        }
+
+        .buttons { display: flex; gap: 60px; margin-top: 40px; z-index: 30; }
+
+        .file-btn {
+            width: 260px; height: 110px;
+            background: linear-gradient(145deg, #1a1a1a, #0f0f0f);
+            border: 3px solid #444;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.23,1,0.32,1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+        }
+
+        .file-btn:hover {
+            transform: translateY(-8px) scale(1.03);
+            border-color: var(--red);
+            box-shadow: 0 0 40px rgba(255,0,51,0.5);
+        }
+
+        .file-btn:active { transform: scale(0.96); filter: brightness(0.7); }
+
+        .file-icon { font-size: 48px; margin-right: 18px; }
+        .file-name { font-size: 22px; color: #ddd; }
+        .file-ext  { color: var(--red); font-size: 18px; }
+        .file-type { font-size: 13px; color: #666; margin-top: 4px; }
+
+        #overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            font-size: 38px;
+            color: var(--red);
+            text-shadow: 0 0 30px var(--red);
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: repeating-linear-gradient(to bottom,
+                transparent 0px, transparent 3px,
+                rgba(0,255,157,0.03) 3px, rgba(0,255,157,0.03) 6px);
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+<!-- ╔══════════════════════════════════════════════════════════════╗ -->
+<!-- ║  MESSAGE CACHÉ : "TU AS TROUVÉ... MAIS C'EST TROP TARD."   ║ -->
+<!-- ╚══════════════════════════════════════════════════════════════╝ -->
+
+    <canvas id="matrix-canvas"></canvas>
+
+    <div class="header">
+        <div class="header-title">NEURAL://SHADOW_PROTOCOL — ACCESS LEVEL: ROOT</div>
+    </div>
+
+    <div class="container">
+        <div class="central">
+            <img id="cyber-cat" src="https://cataas.com/cat" alt="Cyber Cat" onerror="this.src='https://placekitten.com/220/220'">
+            <div class="main-text">QUE LA PARTIE COMMENCE…</div>
+            <!-- message caché sur fond noir, lisible seulement en sélectionnant le texte -->
+            <div class="secret-hint">un message est caché mais tu ne le trouveras pas</div>
+        </div>
+
+        <div class="buttons">
+            <div class="file-btn" id="open-btn">
+                <div class="file-icon">📁</div>
+                <div class="file-info">
+                    <div class="file-name">ouvre_le<span class="file-ext">.exe</span></div>
+                    <div class="file-type">Application — 2.4 MB</div>
+                </div>
+            </div>
+
+            <div class="file-btn" id="dont-open-btn">
+                <div class="file-icon">⚠️</div>
+                <div class="file-info">
+                    <div class="file-name">ne_louvre_pas<span class="file-ext">.exe</span></div>
+                    <div class="file-type">Application — 666 KB</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mini-terminal">
+        <div class="mini-terminal-header">► SYSTEM://LOG — LIVE</div>
+        <div id="terminal-output"></div>
+        <span>></span><span id="terminal-line"></span><span class="cursor"></span>
+    </div>
+
+    <!-- Message invisible en bas à droite (texte couleur = fond) -->
+    <div class="hidden-msg">SHADOW_KEY: 4X-7Z-OMEGA</div>
+
+    <div class="scanlines"></div>
+    <div id="overlay"></div>
+
+    <script>
+        // ── MATRIX ──
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        function resizeCanvas() { canvas.height = window.innerHeight; canvas.width = window.innerWidth; }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        const chars = "01アイウエオABCDEFGHIJKLMNOPQRSTUVWXYZ$@#%&*";
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(10,10,10,0.08)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff9d';
+            ctx.font = `${fontSize}px VT323`;
+            for (let i = 0; i < drops.length; i++) {
+                ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            }
+        }
+        setInterval(drawMatrix, 35);
+
+        // ── MINI TERMINAL ──
+        const terminalLines = [
+            "INITIALISATION DU KERNEL...",
+            "CONNEXION AU RÉSEAU TOR...",
+            "SYNCHRONISATION NEURONALE...",
+            "DÉTECTION DE MENACES: 0",
+            "FIREWALL: ACTIVE",
+            "TRACEURS: BLOQUÉS"
+        ];
+        let lineIndex = 0;
+        const terminalOutput = document.getElementById('terminal-output');
+        const terminalLine   = document.getElementById('terminal-line');
+        function typeLine(text, cb) {
+            let i = 0;
+            terminalLine.textContent = '';
+            const iv = setInterval(() => {
+                if (i < text.length) { terminalLine.textContent += text[i++]; }
+                else { clearInterval(iv); if (cb) setTimeout(cb, 400); }
+            }, 30);
+        }
+        function runTerminal() {
+            if (lineIndex < terminalLines.length) {
+                const p = document.createElement('div');
+                terminalOutput.appendChild(p);
+                if (terminalOutput.children.length > 5) terminalOutput.removeChild(terminalOutput.children[0]);
+                typeLine(terminalLines[lineIndex], () => { lineIndex++; setTimeout(runTerminal, 800); });
+            } else { lineIndex = 0; setTimeout(runTerminal, 1500); }
+        }
+        setTimeout(runTerminal, 1200);
+
+        // ── OVERLAY ──
+        const overlay = document.getElementById('overlay');
+        function showOverlay(text, color = '#ff0033') {
+            overlay.style.display = 'flex';
+            overlay.style.color = color;
+            overlay.textContent = text;
+        }
+
+        // ── BOUTON "OUVRE LE" → bouton1.html ──
+        document.getElementById('open-btn').addEventListener('click', () => {
+            showOverlay("OUVERTURE DU FICHIER...", "#00ff9d");
+            setTimeout(() => {
+                document.body.style.transition = "opacity 1.5s";
+                document.body.style.opacity = "0";
+                setTimeout(() => { window.location.href = "bouton1.html"; }, 1600);
+            }, 2000);
+        });
+
+        // ── BOUTON "NE L'OUVRE PAS" → backdoor.html ──
+        document.getElementById('dont-open-btn').addEventListener('click', () => {
+            showOverlay("MAUVAISE DÉCISION...", "#ff0033");
+            setTimeout(() => {
+                document.body.style.transition = "all 0.4s";
+                document.body.style.background = "#000";
+                document.body.style.filter = "brightness(0.1)";
+                setTimeout(() => { window.location.href = "backdoor.html"; }, 700);
+            }, 1300);
+        });
+
+        // ── KONAMI ──
+        let konamiCode = [];
+        const secretCode = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight'];
+        document.addEventListener('keydown', (e) => {
+            konamiCode.push(e.key);
+            if (konamiCode.length > secretCode.length) konamiCode.shift();
+            if (JSON.stringify(konamiCode) === JSON.stringify(secretCode)) {
+                document.getElementById('cyber-cat').style.filter = 'hue-rotate(90deg) drop-shadow(0 0 60px #00ffff)';
+                setTimeout(() => alert("ACCÈS ROOT OBTENU. BIENVENUE DANS LA MATRICE."), 300);
+            }
+        });
+    </script>
+</body>
+</html>

